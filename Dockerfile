@@ -12,8 +12,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
-# Expose port (Back4App will set the PORT environment variable)
-EXPOSE 5000
+# Set default PORT if not provided
+ENV PORT=8080
+
+# Expose port
+EXPOSE 8080
 
 # Run the application with gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 app:app
+CMD gunicorn --bind 0.0.0.0:${PORT} --workers 2 --threads 4 app:app
