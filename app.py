@@ -9,9 +9,9 @@ DEFAULT_CONFIG = {
     'vehicles': ['MH14HQ2061', 'MH12KQ4018', 'MH12HB2065', 'MH12HB2064'],
     'home_lat': 18.4556175,
     'home_lon': 73.9174223,
-    'alert_distance': 5.0,
-    'check_interval': 30,
-    'map_zoom': 13
+    'alert_distance':0.8,
+    'check_interval': 20,
+    'map_zoom': 14
 }
 
 def calculate_distance(lat1, lon1, lat2, lon2):
