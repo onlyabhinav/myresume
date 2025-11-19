@@ -348,6 +348,28 @@
           transform: rotate(360deg);
         }
       }
+
+      @keyframes slideDown {
+        from {
+          transform: translateX(-50%) translateY(-100px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(-50%) translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateX(-50%) translateY(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(-50%) translateY(-100px);
+          opacity: 0;
+        }
+      }
     </style>
   </head>
   <body>
@@ -772,15 +794,66 @@
       }
 
       function showNotification(vehicleNo, distance) {
-        if ("Notification" in window && Notification.permission === "granted") {
-          const notification = new Notification("🚨 Vehicle Alert!", {
-            body: `${vehicleNo} is within alert range (${distance} km)`,
-            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23e74c3c"/><text x="50" y="65" font-size="50" text-anchor="middle" fill="white">🚗</text></svg>',
-            requireInteraction: true,
-          });
-
-          playAlertSound();
+        // For mobile browsers, use visual alert instead of system notification
+        if (isMobileDevice()) {
+          showMobileAlert(vehicleNo, distance);
+        } else if (
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          try {
+            new Notification("🚨 Vehicle Alert!", {
+              body: `${vehicleNo} is within alert range (${distance} km)`,
+              icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23e74c3c"/><text x="50" y="65" font-size="50" text-anchor="middle" fill="white">🚗</text></svg>',
+              requireInteraction: true,
+            });
+          } catch (e) {
+            console.log("Notification failed, using fallback");
+            showMobileAlert(vehicleNo, distance);
+          }
         }
+        playAlertSound();
+      }
+
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      }
+
+      function showMobileAlert(vehicleNo, distance) {
+        // Create custom on-screen notification
+        const alertDiv = document.createElement("div");
+        alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-size: 14px;
+                font-weight: 600;
+                text-align: center;
+                animation: slideDown 0.3s ease-out;
+                max-width: 90%;
+            `;
+        alertDiv.innerHTML = `
+                <div style="font-size: 24px; margin-bottom: 5px;">🚨</div>
+                <div style="font-size: 16px; margin-bottom: 3px;">Vehicle Alert!</div>
+                <div style="font-size: 13px; opacity: 0.9;">${vehicleNo} is within ${distance} km</div>
+            `;
+
+        document.body.appendChild(alertDiv);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+          alertDiv.style.animation = "slideUp 0.3s ease-in";
+          setTimeout(() => alertDiv.remove(), 300);
+        }, 5000);
       }
 
       async function updateVehicles() {
