@@ -14,10 +14,7 @@ DEFAULT_CONFIG = {
     'alert_distance': 0.8,
     'very_near_distance': 400,
     'check_interval': 30,
-    'map_zoom': 13,
-    'sound_in_range': '/static/alert.wav',
-    'sound_very_near': '/static/alert_04.wav',
-    'sound_at_school': '/static/alert_02.wav'
+    'map_zoom': 13
 }
 
 def calculate_distance(lat1, lon1, lat2, lon2):

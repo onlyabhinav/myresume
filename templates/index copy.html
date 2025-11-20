@@ -587,14 +587,8 @@
       <p style="text-align: center; color: #666">Loading vehicles...</p>
     </div>
 
-    <audio id="alertSoundInRange" preload="auto">
-      <source src="/static/alert_in_range.wav" type="audio/wav" />
-    </audio>
-    <audio id="alertSoundVeryNear" preload="auto">
-      <source src="/static/alert_very_near.wav" type="audio/wav" />
-    </audio>
-    <audio id="alertSoundAtSchool" preload="auto">
-      <source src="/static/alert_at_school.wav" type="audio/wav" />
+    <audio id="alertSound" preload="auto">
+      <source src="/static/alert.wav" type="audio/wav" />
     </audio>
 
     <script>
@@ -611,18 +605,11 @@
         vehicleMarkers = {},
         alertedVehicles = new Set();
       let trackingInterval, timerInterval, remainingSeconds;
-      let audioContext,
-        audioBuffers = {};
+      let audioContext, audioBuffer;
       let currentVehicleData = null;
       let viewMode = "cards";
       let isTracking = false;
       let settingsChanged = false;
-
-      const soundConfig = {
-        "IN RANGE": "{{ config.sound_in_range }}",
-        "VERY NEAR": "{{ config.sound_very_near }}",
-        "AT SCHOOL": "{{ config.sound_at_school }}",
-      };
 
       // Track settings changes
       function detectSettingsChange() {
@@ -715,58 +702,36 @@
         try {
           audioContext = new (window.AudioContext ||
             window.webkitAudioContext)();
-
-          // Load all three alert sounds
-          const soundTypes = ["IN RANGE", "VERY NEAR", "AT SCHOOL"];
-
-          for (const type of soundTypes) {
-            try {
-              const response = await fetch(soundConfig[type]);
-              const arrayBuffer = await response.arrayBuffer();
-              audioBuffers[type] = await audioContext.decodeAudioData(
-                arrayBuffer
-              );
-              console.log(`${type} sound loaded`);
-            } catch (e) {
-              console.log(`Failed to load ${type} sound:`, e);
-            }
-          }
-
+          const response = await fetch("/static/alert.wav");
+          const arrayBuffer = await response.arrayBuffer();
+          audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
           console.log("Audio initialized successfully");
         } catch (e) {
           console.log("Web Audio API failed, using HTML5 audio:", e);
         }
       }
 
-      function playAlertSound(alertType = "IN RANGE") {
+      function playAlertSound() {
         try {
-          // Try Web Audio API first (better performance)
-          if (audioContext && audioBuffers[alertType]) {
+          // Try Web Audio API first
+          if (audioContext && audioBuffer) {
             const source = audioContext.createBufferSource();
-            source.buffer = audioBuffers[alertType];
+            source.buffer = audioBuffer;
             source.connect(audioContext.destination);
             source.start(0);
-            console.log(`Playing ${alertType} sound via Web Audio API`);
+            console.log("Playing sound via Web Audio API");
           } else {
             // Fallback to HTML5 audio
-            const audioIds = {
-              "IN RANGE": "alertSoundInRange",
-              "VERY NEAR": "alertSoundVeryNear",
-              "AT SCHOOL": "alertSoundAtSchool",
-            };
-
-            const audio = document.getElementById(audioIds[alertType]);
-            if (audio) {
-              audio.currentTime = 0;
-              audio
-                .play()
-                .then(() => {
-                  console.log(`Playing ${alertType} sound via HTML5 audio`);
-                })
-                .catch((e) => {
-                  console.log("Audio play failed:", e);
-                });
-            }
+            const audio = document.getElementById("alertSound");
+            audio.currentTime = 0;
+            audio
+              .play()
+              .then(() => {
+                console.log("Playing sound via HTML5 audio");
+              })
+              .catch((e) => {
+                console.log("Audio play failed:", e);
+              });
           }
         } catch (e) {
           console.error("Sound play error:", e);
@@ -909,7 +874,7 @@
             showMobileAlert(vehicleNo, distance, alertType);
           }
         }
-        playAlertSound(alertType);
+        playAlertSound();
       }
 
       function isMobileDevice() {
@@ -1119,13 +1084,9 @@
           }
         });
 
-        // Play appropriate alert sound based on priority
-        if (anyVehicleVeryNear) {
-          playAlertSound("VERY NEAR");
-        } else if (anyVehicleAtSchool) {
-          playAlertSound("AT SCHOOL");
-        } else if (anyVehicleInRange) {
-          playAlertSound("IN RANGE");
+        // Play alert sound if ANY vehicle triggers any alert
+        if (anyVehicleVeryNear || anyVehicleInRange || anyVehicleAtSchool) {
+          playAlertSound();
         }
       }
 
